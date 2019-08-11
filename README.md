@@ -38,18 +38,7 @@ yarn add @types/socket.io --dev
 
 ```typescript
 const connection = new Connection({
-	socketIO: <Your SocketIO instance>,
-	users: {
-		onAdded: (user) => {
-			// Handle new user
-		},
-		onEvent: (user, event, data) => {
-			// Handle event from user
-		},
-		onRemoved: (user) => {
-			// Handle user's removal
-		}
-	}
+	socketIO: <Your SocketIO instance>
 });
 ```
 
@@ -71,6 +60,28 @@ To remove the user, write this:
 
 ```typescript
 connection.remove(socket);
+```
+
+You can handle user-related events within the configuration of your `Connection` instance:
+
+```typescript
+const connection = new Connection({
+	socketIO: <Your SocketIO instance>,
+	users: {
+		onAdded: (user) => {
+			// Handle new user
+		},
+		onReceived: (message, sender) => {
+			// Handle incoming message
+		},
+		onSent: (message, sender) => {
+			// Handle outgoing message
+		},
+		onRemoved: (user) => {
+			// Handle user's removal
+		}
+	}
+});
 ```
 
 ### Messages
