@@ -12,30 +12,32 @@
 
 ## At a Glance
 
-`Recognizer` identifies users connected to your server with socket. The library is built on top of [Socket.IO](https://socket.io).
+`Connection` identifies users connected to your server by [socket.io](https://socket.io).
 
 ## How to Get Started
 
 If you use `npm`, type in Terminal:
 
 ```
-npm install --save @imatyushkin/recognizer socket.io
+npm install --save @imatyushkin/connection socket.io
 npm install --save-dev @types/socket.io
 ```
 
 If you prefer `yarn`, type:
 
 ```
-yarn add @imatyushkin/recognizer socket.io
+yarn add @imatyushkin/connection socket.io
 yarn add @types/socket.io --dev
 ```
 
 ## Usage
 
-`Recognizer` requires SocketIO server instance:
+### Initial setup
+
+`Connection` requires `SocketIO` server instance:
 
 ```typescript
-const recognizer = new Recognizer({
+const connection = new Connection({
 	socketIO: <Your SocketIO instance>,
 	users: {
 		onAdded: (user) => {
@@ -51,18 +53,30 @@ const recognizer = new Recognizer({
 });
 ```
 
-To add new user, simply send socket to recognizer:
+### Users
+
+Instead of low-level sockets, `Connection` considers every client as a `User`. Every user has:
+
+- `id`: unique string that identifies user;
+- `socket`: reference to socket object from `socket.io` library;
+- `data`: optional object for storing user's data **(do whatever you want with this object)**.
+
+To add new user, simply send socket to `Connection` instance:
 
 ```typescript
-recognizer.add(socket);
+connection.add(socket);
 ```
 
 To remove the user, write this:
 
 ```typescript
-recognizer.remove(socket);
+connection.remove(socket);
 ```
+
+### Events
+
+Documentation for events will be added soon.
 
 ## License
 
-`Recognizer` is available under the Apache 2.0 license. See the [LICENSE](./LICENSE) file for more info.
+`Connection` is available under the Apache 2.0 license. See the [LICENSE](./LICENSE) file for more info.
