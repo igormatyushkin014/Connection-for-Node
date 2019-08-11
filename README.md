@@ -144,6 +144,16 @@ connection.send(
 );
 ```
 
+Also, we can say hello to all users:
+
+```typescript
+connection.sendToEveryone({
+	data: {
+		text: "Hello"
+	}
+});
+```
+
 ## License
 
 `Connection` is available under the Apache 2.0 license. See the [LICENSE](./LICENSE) file for more info.
