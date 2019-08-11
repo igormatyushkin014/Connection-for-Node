@@ -62,6 +62,12 @@ To remove the user, write this:
 connection.remove(socket);
 ```
 
+The list of existing users is accesible via:
+
+```typescript
+connection.getUsers()
+```
+
 You can handle user-related events within the configuration of your `Connection` instance:
 
 ```typescript
@@ -91,24 +97,52 @@ In `socket.io`, every message sent between client and server includes event name
 ```typescript
 const connection = new Connection({
 	socketIO: <Your SocketIO instance>,
-	users: {
-		onAdded: (user) => {
-			// Handle new user
-		},
-		onEvent: (user, event, data) => {
-			// Handle event from user
-		},
-		onRemoved: (user) => {
-			// Handle user's removal
-		}
-	},
 	messages: {
 		defaultEvent: "PUT-DEFAULT-EVENT-NAME-HERE"
 	}
 });
 ```
 
-More documentation for messages will be added soon.
+Sending message from server to user is extremely simple:
+
+```typescript
+connection.send(
+	{
+		event: "Greeting",
+		data: {
+			text: "Hello"
+		}
+	},
+	"RECIPIENT-ID"
+);
+```
+
+If you want to use default event, then write:
+
+```typescript
+connection.send(
+	{
+		data: {
+			text: "Hello"
+		}
+	},
+	"RECIPIENT-ID"
+);
+```
+
+Let's assume we want to say hello to the first user on the list:
+
+```typescript
+let user = connection.getUsers()[0];
+connection.send(
+	{
+		data: {
+			text: "Hello"
+		}
+	},
+	user.id
+);
+```
 
 ## License
 
