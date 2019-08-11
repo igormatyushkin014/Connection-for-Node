@@ -18,15 +18,21 @@ import {
 	Message
 } from "./message";
 
+import {
+	ResponseHandler
+} from "./response-handler";
+
 import LibraryConfiguration from "../configuration/configuration";
 
 export class Connection {
 
-	private store = new Store();
+	private readonly store = new Store();
 
-	private responseWaitingList: {
+	private readonly requestIdProvider = new IdProvider();
+
+	private readonly responseWaitingList: {
 		requestId: string,
-		handler: () => void
+		handler: ResponseHandler
 	}[] = [];
 
 	constructor(
@@ -44,24 +50,6 @@ export class Connection {
 		} else {
 			return "";
 		}
-	}
-
-	private constructMessageData(
-		sourceData: any,
-		callbackRequired: boolean
-	): any {
-		let nonNullData = sourceData ? sourceData : {};
-		let resultData = Object.assign({}, nonNullData);
-
-		if (callbackRequired) {
-			/*
-				Поскольку запрошен callback, генерируем уникальный идентификатор запроса.
-				Идентификатор будет отправлен вместе с остальной информацией о событии.
-			*/
-			resultData[LibraryConfiguration.messages.requestIdentifierKey] = new IdProvider().getNextId();
-		}
-
-		return resultData;
 	}
 
 	public add(
@@ -117,7 +105,7 @@ export class Connection {
 
 		/*
 			Реализуем поддержку callback'ов путем подписки на событие
-			`LibraryConfiguration.events.receiptConfirmedEventName`.
+			`LibraryConfiguration.messages.responseEvent`.
 		*/
 		socket.on(
 			LibraryConfiguration.messages.responseEvent,
@@ -178,7 +166,7 @@ export class Connection {
 	public send(
 		message: Message,
 		recipientId: string,
-		callback?: () => void
+		callback?: ResponseHandler
 	) {
 		let recipient = this.store.getUserById(
 			recipientId
@@ -191,10 +179,42 @@ export class Connection {
 		let event = this.getEventName(
 			message.event
 		);
-		let data = this.constructMessageData(
-			message.data,
-			callback != null
-		);
+
+		let requestId = ((): string | undefined => {
+			if (callback) {
+				/*
+					Поскольку запрошен callback, генерируем уникальный идентификатор запроса.
+				*/
+				return this.requestIdProvider.getNextId();
+			} else {
+				return undefined;
+			}
+		})();
+		
+		let data = ((): any => {
+			let sourceData = message.data ? message.data : {};
+			let resultData = Object.assign({}, sourceData);
+
+			if (requestId) {
+				/*
+					Идентификатор запроса будет отправлен вместе с остальной информацией о событии.
+				*/
+				resultData[LibraryConfiguration.messages.requestIdentifierKey] = requestId;
+			}
+
+			return resultData;
+		})();
+
+		if (requestId && callback) {
+			/*
+				Добавляем обработчик ответа в очередь.
+			*/
+			this.responseWaitingList.push({
+				requestId: requestId,
+				handler: callback
+			});
+		}
+
 		recipient.socket.emit(
 			event,
 			data
@@ -209,30 +229,27 @@ export class Connection {
 	}
 
 	public sendToEveryone(
-		message: Message,
-		callback?: () => void
+		message: Message
 	) {
 		let event = this.getEventName(
 			message.event
 		);
-		let data = this.constructMessageData(
-			message.data,
-			callback != null
-		);
-		this.configuration.socketIO.emit(
-			event,
-			data
-		);
+		let data = message.data;
+		let onSent = this.configuration.users && this.configuration.users.onSent;
 
-		if (this.configuration.users && this.configuration.users.onSent) {
-			let onSent = this.configuration.users.onSent;
-			this.store.getAllUsers()
-				.forEach((user) => {
+		this.store.getAllUsers()
+			.forEach((user) => {
+				user.socket.emit(
+					event,
+					data
+				);
+
+				if (onSent) {
 					onSent(
 						message,
 						user
 					);
-				});
-		}
+				}
+			});
 	}
 }
