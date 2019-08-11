@@ -1,0 +1,31 @@
+{
+  "name": "@imatyushkin/connection",
+  "version": "1.0.0",
+  "description": "Identifies users connected to your server by Socket.IO. Made for Node.js.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/igormatyushkin014/Connection-for-Node.git"
+  },
+  "author": "Igor Matyushkin",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/igormatyushkin014/Connection-for-Node/issues"
+  },
+  "homepage": "https://github.com/igormatyushkin014/Connection-for-Node#readme",
+  "devDependencies": {
+    "@types/node": "^12.7.1",
+    "@types/socket.io": "^2.1.2",
+    "@types/uuid": "^3.4.5",
+    "typescript": "^3.5.3"
+  },
+  "dependencies": {
+    "socket.io": "^2.2.0",
+    "uuid": "^3.3.2"
+  }
+}
