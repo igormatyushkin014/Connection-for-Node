@@ -73,9 +73,31 @@ To remove the user, write this:
 connection.remove(socket);
 ```
 
-### Events
+### Messages
 
-Documentation for events will be added soon.
+In `socket.io`, every message sent between client and server includes event name and (optionally) some data. In `Connection`, event name is optional. You can set default event name that will be used when no event was specified in particular message:
+
+```typescript
+const connection = new Connection({
+	socketIO: <Your SocketIO instance>,
+	users: {
+		onAdded: (user) => {
+			// Handle new user
+		},
+		onEvent: (user, event, data) => {
+			// Handle event from user
+		},
+		onRemoved: (user) => {
+			// Handle user's removal
+		}
+	},
+	messages: {
+		defaultEvent: "PUT-DEFAULT-EVENT-NAME-HERE"
+	}
+});
+```
+
+More documentation for messages will be added soon.
 
 ## License
 
