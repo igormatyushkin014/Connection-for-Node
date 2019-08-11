@@ -3,8 +3,8 @@ export {
 } from "./data/user";
 
 export {
-	Event
-} from "./engine/event";
+	Message
+} from "./engine/message";
 
 export {
 	ConnectionConfiguration

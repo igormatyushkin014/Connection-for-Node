@@ -1,7 +1,7 @@
 const configuration = {
-	events: {
-		requestIdentifierKey: "Recognizer.RequestId",
-		receiptConfirmedEventName: "Recognizer.ReceiptConfirmed"
+	messages: {
+		requestIdentifierKey: "Connection.RequestId",
+		responseEvent: "Connection.Response"
 	}
 };
 
