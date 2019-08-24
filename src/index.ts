@@ -3,10 +3,6 @@ export {
 } from "./data/user";
 
 export {
-	Message
-} from "./engine/message";
-
-export {
 	ConnectionConfiguration
 } from "./engine/connection-configuration";
 
