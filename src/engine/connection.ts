@@ -15,22 +15,28 @@ import {
 } from "./id-provider";
 
 import {
-	Message
-} from "./message";
+	Request,
+	isRequest
+} from "../io/request";
+
+import {
+	Response,
+	isResponse
+} from "../io/response";
 
 import {
 	ResponseHandler
-} from "./response-handler";
-
-import LibraryConfiguration from "../configuration/configuration";
+} from "../io/response-handler";
 
 export class Connection {
+
+	private static defaultEvent = "connection.event";
 
 	private readonly store = new Store();
 
 	private readonly requestIdProvider = new IdProvider();
 
-	private readonly responseWaitingList: {
+	private readonly responseHandlers: {
 		requestId: string,
 		handler: ResponseHandler
 	}[] = [];
@@ -40,21 +46,16 @@ export class Connection {
 	) {
 	}
 
-	private getEventName(
-		sourceEventName?: string
-	) {
-		if (sourceEventName) {
-			return sourceEventName;
-		} else if (this.configuration.messages) {
-			return this.configuration.messages.defaultEvent;
+	private getEvent() {
+		if (this.configuration.events && this.configuration.events.defaultEvent) {
+			return this.configuration.events.defaultEvent;
 		} else {
-			return "";
+			return Connection.defaultEvent;
 		}
 	}
 
 	public add(
-		socket: SocketIO.Socket,
-		events: string[]
+		socket: SocketIO.Socket
 	): User {
 		/*
 			Создаем нового пользователя и добавляем его в базу.
@@ -66,63 +67,55 @@ export class Connection {
 		/*
 			Добавляем подписку на все необходимые события.
 		*/
-		events.forEach((event) => {
-			socket.on(
-				event,
-				(data) => {
-					let incomingMessage: Message = {
-						event: event,
-						data: data
-					};
-					let requestId = data[LibraryConfiguration.messages.requestIdentifierKey];
-
-					if (requestId) {
-						/*
-							Поскольку запрос имеет уникальный идентификатор,
-							подтверждаем получение запроса.
-						*/
-						let responseData: any = {};
-						responseData[LibraryConfiguration.messages.requestIdentifierKey] = requestId;
-						let responseMessage: Message = {
-							event: LibraryConfiguration.messages.responseEvent,
-							data: responseData
-						};
-						this.send(
-							responseMessage,
-							user.id
-						);
-					}
-
-					if (this.configuration.users && this.configuration.users.onReceived) {
-						this.configuration.users!.onReceived(
-							incomingMessage,
-							user
-						);
-					}
-				}
-			);
-		});
-
-		/*
-			Реализуем поддержку callback'ов путем подписки на событие
-			`LibraryConfiguration.messages.responseEvent`.
-		*/
 		socket.on(
-			LibraryConfiguration.messages.responseEvent,
+			this.getEvent(),
 			(data) => {
-				let requestIndex = this.responseWaitingList
-					.findIndex((request) => {
-						return request.requestId === data[LibraryConfiguration.messages.requestIdentifierKey];
-					});
+				if (isRequest(data)) {
+					/*
+						Получен запрос.
+					*/
+					let requestId = data.requestId;
 
-				if (requestIndex < 0 || requestIndex >= this.responseWaitingList.length) {
-					return;
+					if (this.configuration.io && this.configuration.io.onRequest) {
+						let request = {
+							requestId: requestId,
+							from: user,
+							data: data.data
+						};
+						let respond = (data: any) => {
+							this.response({
+								to: user.id,
+								requestId: requestId,
+								data: data
+							});
+						};
+						this.configuration.io.onRequest(
+							request,
+							respond
+						);
+					}
+				} else if (isResponse(data)) {
+					/*
+						Получен ответ на запрос.
+					*/
+					let responseHandlerIndex = this.responseHandlers
+						.findIndex((responseHandler) => {
+							return responseHandler.requestId === data.requestId;
+						});
+
+					if (responseHandlerIndex < 0 || responseHandlerIndex >= this.responseHandlers.length) {
+						return;
+					}
+
+					let responseHandler = this.responseHandlers[responseHandlerIndex];
+					responseHandler.handler(data.data);
+
+					this.responseHandlers.splice(responseHandlerIndex, 1);
+				} else {
+					/*
+						Неизвестный тип сообщения.
+					*/
 				}
-
-				let request = this.responseWaitingList[requestIndex];
-				request.handler();
-
-				this.responseWaitingList.splice(requestIndex, 1);
 			}
 		);
 
@@ -163,93 +156,71 @@ export class Connection {
 		return this.store.getAllUsers();
 	}
 
-	public send(
-		message: Message,
-		recipientId: string,
-		callback?: ResponseHandler
+	public request(
+		configuration: {
+			to: string,
+			data: any,
+			callback?: ResponseHandler
+		}
 	) {
 		let recipient = this.store.getUserById(
-			recipientId
+			configuration.to
 		);
 
 		if (!recipient) {
 			return;
 		}
 
-		let event = this.getEventName(
-			message.event
-		);
+		let event = this.getEvent();
+		let requestId = this.requestIdProvider.getNextId();
 
-		let requestId = ((): string | undefined => {
-			if (callback) {
-				/*
-					Поскольку запрошен callback, генерируем уникальный идентификатор запроса.
-				*/
-				return this.requestIdProvider.getNextId();
-			} else {
-				return undefined;
-			}
-		})();
-		
-		let data = ((): any => {
-			let sourceData = message.data ? message.data : {};
-			let resultData = Object.assign({}, sourceData);
-
-			if (requestId) {
-				/*
-					Идентификатор запроса будет отправлен вместе с остальной информацией о событии.
-				*/
-				resultData[LibraryConfiguration.messages.requestIdentifierKey] = requestId;
-			}
-
-			return resultData;
-		})();
-
-		if (requestId && callback) {
+		if (configuration.callback) {
 			/*
 				Добавляем обработчик ответа в очередь.
 			*/
-			this.responseWaitingList.push({
+			this.responseHandlers.push({
 				requestId: requestId,
-				handler: callback
+				handler: configuration.callback
 			});
 		}
+
+		let request: Request = {
+			type: "request",
+			requestId: requestId,
+			data: configuration.data
+		};
 
 		recipient.socket.emit(
 			event,
-			data
+			request
 		);
-
-		if (this.configuration.users && this.configuration.users.onSent) {
-			this.configuration.users.onSent(
-				message,
-				recipient
-			);
-		}
 	}
 
-	public sendToEveryone(
-		message: Message
+	public response(
+		configuration: {
+			to: string,
+			requestId: string,
+			data: any
+		}
 	) {
-		let event = this.getEventName(
-			message.event
+		let recipient = this.store.getUserById(
+			configuration.to
 		);
-		let data = message.data;
-		let onSent = this.configuration.users && this.configuration.users.onSent;
 
-		this.store.getAllUsers()
-			.forEach((user) => {
-				user.socket.emit(
-					event,
-					data
-				);
+		if (!recipient) {
+			return;
+		}
 
-				if (onSent) {
-					onSent(
-						message,
-						user
-					);
-				}
-			});
+		let event = this.getEvent();
+		let response: Response = {
+			type: "response",
+			requestId: configuration.requestId,
+			data: configuration.data
+		};
+
+		recipient.socket.emit(
+			event,
+			response
+		);
 	}
 }
