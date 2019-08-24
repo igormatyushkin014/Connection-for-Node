@@ -75,79 +75,105 @@ const connection = new Connection({
 	socketIO: <Your SocketIO instance>,
 	users: {
 		onAdded: (user) => {
-			// Handle new user
-		},
-		onReceived: (message, sender) => {
-			// Handle incoming message
-		},
-		onSent: (message, sender) => {
-			// Handle outgoing message
+			/*
+				Handle new user.
+			*/
+			console.log(`Added user with ID: ${user.id}`);
 		},
 		onRemoved: (user) => {
-			// Handle user's removal
+			/*
+				Handle user's removal.
+			*/
+			console.log(`Removed user with ID: ${user.id}`);
 		}
 	}
 });
 ```
 
-### Messages
+### Request and Response
 
-In `socket.io`, every message sent between client and server includes event name and (optionally) some data. In `Connection`, event name is optional. You can set default event name that will be used when no event was specified in particular message:
+In `socket.io`, every message sent between client and server includes event name and (optionally) some data. In `Connection` library, we use a different way of communication: request and response. It's similar to regular APIs where we send some data by HTTP channel and (sometimes) receive response.
+
+Because `Connection` uses `socket.io` under the hood, it actually sends socket messages between client and server. By default, we use `connection.event` string for event name. If by some reason you want to change default event name, you still can do this via configuration object:
 
 ```typescript
 const connection = new Connection({
 	socketIO: <Your SocketIO instance>,
-	messages: {
+	events: {
 		defaultEvent: "PUT-DEFAULT-EVENT-NAME-HERE"
 	}
 });
 ```
 
-Sending message from server to user is extremely simple:
+To receive requests from client, set up your configuration:
 
 ```typescript
-connection.send(
-	{
-		event: "Greeting",
-		data: {
-			text: "Hello"
+const connection = new Connection({
+	socketIO: <Your SocketIO instance>,
+	io: {
+		onRequest: (request, respond) => {
+			/*
+				Handle request sent by client.
+			*/
+			let sender = request.from;
+			
+			if (request.data.requireGreeting) {
+				/*
+					We can send response to client by passing data to `respond` function.
+				*/
+				respond({
+					text: `Hello, user "${sender.id}"!`
+				});
+			}
 		}
-	},
-	"RECIPIENT-ID"
-);
+	}
+});
 ```
 
-If you want to use default event, then write:
+Sending request from server to user is super simple:
 
 ```typescript
-connection.send(
-	{
-		data: {
-			text: "Hello"
-		}
-	},
-	"RECIPIENT-ID"
-);
+connection.send({
+	to: "RECIPIENT-ID",
+	data: {
+		text: "Hello!"
+	}
+});
 ```
 
 Let's assume we want to say hello to the first user on the list:
 
 ```typescript
 let user = connection.getUsers()[0];
-connection.send(
-	{
-		data: {
-			text: "Hello"
-		}
+connection.send({
+	to: user.id,
+	data: {
+		text: "Hello!"
+	}
+});
+```
+
+If you want to get response, add `callback` to the options:
+
+```typescript
+let user = connection.getUsers()[0];
+connection.send({
+	to: user.id,
+	data: {
+		text: "Hello!"
 	},
-	user.id
-);
+	callback: (data) => {
+		/*
+			Handle response from client.
+		*/
+	}
+});
 ```
 
 Also, we can say hello to all users:
 
 ```typescript
-connection.sendToEveryone({
+connection.everyone({
 	data: {
 		text: "Hello"
 	}
