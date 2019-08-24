@@ -3,18 +3,26 @@ import {
 } from "../data/user";
 
 import {
-	Message
-} from "./message";
+	Request
+} from "../io/request";
 
 export type ConnectionConfiguration = {
 	readonly socketIO: SocketIO.Server,
-	readonly users?: {
-		onAdded?: (user: User) => void,
-		onReceived?: (message: Message, sender: User) => void,
-		onSent?: (message: Message, recipient: User) => void,
-		onRemoved?: (user: User) => void
+	readonly events?: {
+		readonly defaultEvent?: string
 	},
-	readonly messages?: {
-		readonly defaultEvent: string
+	readonly users?: {
+		readonly onAdded?: (user: User) => void,
+		readonly onRemoved?: (user: User) => void
+	},
+	readonly io?: {
+		readonly onRequest?: (
+			request: {
+				requestId: string,
+				from: User
+				data: any
+			},
+			respond: (data: any) => void
+		) => void
 	}
 };
