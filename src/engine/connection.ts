@@ -196,7 +196,18 @@ export class Connection {
 		);
 	}
 
-	public response(
+	public everyone(
+		data: any
+	) {
+		this.getUsers().forEach((user) => {
+			this.request({
+				to: user.id,
+				data: data
+			});
+		});
+	}
+
+	private response(
 		configuration: {
 			to: string,
 			requestId: string,
