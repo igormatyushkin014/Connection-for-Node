@@ -6,14 +6,18 @@ import {
 	Request
 } from "../io/request";
 
+import http from "http";
+
+import https from "https";
+
 export type ConnectionConfiguration = {
-	readonly socketIO: SocketIO.Server,
+	readonly server: http.Server | https.Server,
 	readonly events?: {
 		readonly defaultEvent?: string
 	},
 	readonly users?: {
-		readonly onAdded?: (user: User) => void,
-		readonly onRemoved?: (user: User) => void
+		readonly onConnected?: (user: User) => void,
+		readonly onDisconnected?: (user: User) => void
 	},
 	readonly io?: {
 		readonly onRequest?: (

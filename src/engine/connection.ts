@@ -28,22 +28,73 @@ import {
 	ResponseHandler
 } from "../io/response-handler";
 
+import * as SocketIO from "socket.io";
+
 export class Connection {
 
 	private static defaultEvent = "connection.event";
 
-	private readonly store = new Store();
+	private readonly store: Store;
 
-	private readonly requestIdProvider = new IdProvider();
+	private readonly requestIdProvider: IdProvider;
 
 	private readonly responseHandlers: {
 		requestId: string,
 		handler: ResponseHandler
-	}[] = [];
+	}[];
+
+	private socketIO?: SocketIO.Server;
 
 	constructor(
 		private readonly configuration: ConnectionConfiguration
 	) {
+		this.store = new Store();
+		this.requestIdProvider = new IdProvider();
+		this.responseHandlers = [];
+		this.setupSocketIO();
+	}
+
+	private setupSocketIO() {
+		this.socketIO = require("socket.io")(
+			this.configuration.server
+		);
+		this.socketIO!.on(
+			"connection",
+			(socket: SocketIO.Socket) => {
+				let user = this.add(
+					socket
+				);
+
+				socket.on(
+					"disconnect",
+					() => {
+						this.store.removeUserBySocketId(
+							socket.id
+						);
+
+						/*
+							Если указан обработчик отключения пользователя,
+							вызываем данный обработчик.
+						*/
+						if (this.configuration.users && this.configuration.users.onDisconnected) {
+							this.configuration.users.onDisconnected(
+								user
+							);
+						}
+					}
+				);
+
+				/*
+					Если указан обработчик подключения нового пользователя,
+					вызываем данный обработчик.
+				*/
+				if (this.configuration.users && this.configuration.users.onConnected) {
+					this.configuration.users.onConnected(
+						user
+					);
+				}
+			}
+		);
 	}
 
 	private getEvent() {
@@ -54,7 +105,7 @@ export class Connection {
 		}
 	}
 
-	public add(
+	private add(
 		socket: SocketIO.Socket
 	): User {
 		/*
@@ -119,20 +170,10 @@ export class Connection {
 			}
 		);
 
-		/*
-			Если указан обработчик добавления пользователя в базу,
-			вызываем данный обработчик.
-		*/
-		if (this.configuration.users && this.configuration.users.onAdded) {
-			this.configuration.users.onAdded(
-				user
-			);
-		}
-
 		return user;
 	}
 
-	public remove(
+	private remove(
 		socket: SocketIO.Socket
 	) {
 		let user = this.store.getUserBySocketId(
@@ -143,12 +184,6 @@ export class Connection {
 			this.store.removeUserById(
 				user.id
 			);
-
-			if (this.configuration.users && this.configuration.users.onRemoved) {
-				this.configuration.users.onRemoved(
-					user
-				);
-			}
 		}
 	}
 
