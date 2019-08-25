@@ -12,7 +12,7 @@
 
 ## At a Glance
 
-`Connection` identifies users connected to your server by [socket.io](https://socket.io).
+`Connection` is a new way of socket communication. It automatically converts sockets into user profiles and helps developer to associate personal data with each connected user. Also, `Connection` simplifies socket networking by asynchronous callbacks. The library is built on top of [socket.io](https://socket.io).
 
 ## How to Get Started
 
@@ -160,9 +160,7 @@ Also, we can say hello to all users:
 
 ```typescript
 connection.everyone({
-	data: {
-		text: "Hello"
-	}
+	text: "Hello"
 });
 ```
 
@@ -200,7 +198,8 @@ const connection = new Connection({
 			
 			if (request.data.requireGreeting) {
 				/*
-					We can send response to client by passing data to `respond` function.
+					We can send response to client by passing
+					data to `respond` function.
 				*/
 				respond({
 					text: `Hello, user "${sender.id}"!`
