@@ -1,5 +1,5 @@
 <p align="center">
-	<img src="images/logo.png" alt="Manifest" title="Manifest" width="300px" height="300px">
+	<img src="images/logo.png" alt="Manifest" title="Manifest">
 </p>
 
 <p align="center">
