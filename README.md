@@ -3,10 +3,10 @@
 </p>
 
 <p align="center">
-	<a href="https://http://www.android.com">
+	<a href="https://nodejs.org">
 		<img src="https://img.shields.io/badge/Created for-Node.js-teal.svg?style=flat">
 	</a>
-	<a href="https://http://www.android.com">
+	<a href="https://www.typescriptlang.org">
 		<img src="https://img.shields.io/badge/Written in-TypeScript-purple.svg?style=flat">
 	</a>
 	<a href="https://tldrlegal.com/license/apache-license-2.0-(apache-2.0)">
@@ -17,6 +17,8 @@
 ## At a Glance
 
 `Connection` is a new way of socket communication. It automatically converts sockets into user profiles and helps developer to associate personal data with each connected user. Also, `Connection` simplifies socket networking by asynchronous callbacks. The library is built on top of [socket.io](https://socket.io).
+
+**Important note.** This is a server-side of `Connection` library. For client-side solution, take a look at [JavaScript version](https://github.com/igormatyushkin014/Connection.js).
 
 ## How to Get Started
 
@@ -172,7 +174,6 @@ connection.everyone({
 
 Here's an example of extended configuration for `Connection` instance:
 
-```typescript
 ```typescript
 const connection = new Connection({
 	server: <HTTP or HTTPS server instance>,
