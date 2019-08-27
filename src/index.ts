@@ -3,8 +3,8 @@ export {
 } from "./data/user";
 
 export {
-	ConnectionConfiguration
-} from "./engine/connection-configuration";
+	Configuration
+} from "./engine/configuration";
 
 export {
 	Connection

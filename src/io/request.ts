@@ -1,6 +1,7 @@
 export type Request = {
 	readonly type: "request",
 	readonly requestId: string,
+	readonly recipientId?: string,
 	readonly data: any
 };
 

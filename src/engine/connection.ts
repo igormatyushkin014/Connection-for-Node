@@ -1,6 +1,6 @@
 import {
-	ConnectionConfiguration
-} from "./connection-configuration";
+	Configuration
+} from "./configuration";
 
 import {
 	User
@@ -46,7 +46,7 @@ export class Connection {
 	private socketIO?: SocketIO.Server;
 
 	constructor(
-		private readonly configuration: ConnectionConfiguration
+		private readonly configuration: Configuration
 	) {
 		this.store = new Store();
 		this.requestIdProvider = new IdProvider();
@@ -125,6 +125,21 @@ export class Connection {
 					/*
 						Получен запрос.
 					*/
+					let recipientId = data.recipientId;
+
+					if (recipientId) {
+						/*
+							Перенаправляем запрос получателю и завершаем обработку
+							на стороне сервера.
+						*/
+						this.request({
+							to: recipientId,
+							data: data.data,
+							callback: undefined
+						});
+						return;
+					}
+
 					let requestId = data.requestId;
 
 					if (this.configuration.io && this.configuration.io.onRequest) {
