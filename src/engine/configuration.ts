@@ -10,7 +10,7 @@ import http from "http";
 
 import https from "https";
 
-export type ConnectionConfiguration = {
+export type Configuration = {
 	readonly server: http.Server | https.Server,
 	readonly events?: {
 		readonly defaultEvent?: string
