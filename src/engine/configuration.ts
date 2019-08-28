@@ -2,10 +2,6 @@ import {
 	Client
 } from "../data/client";
 
-import {
-	Request
-} from "../io/request";
-
 import http from "http";
 
 import https from "https";

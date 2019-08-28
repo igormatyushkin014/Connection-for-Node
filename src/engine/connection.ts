@@ -14,19 +14,9 @@ import {
 	IdProvider
 } from "./id-provider";
 
-import {
-	Request,
-	isRequest
-} from "../io/request";
+import * as io_raw from "../io/raw";
 
-import {
-	Response,
-	isResponse
-} from "../io/response";
-
-import {
-	ResponseHandler
-} from "../io/response-handler";
+import * as io_rest from "../io/rest";
 
 import * as SocketIO from "socket.io";
 
@@ -40,7 +30,7 @@ export class Connection {
 
 	private readonly responseHandlers: {
 		requestId: string,
-		handler: ResponseHandler
+		handler: io_raw.ResponseHandler
 	}[];
 
 	private socketIO?: SocketIO.Server;
@@ -121,7 +111,7 @@ export class Connection {
 		socket.on(
 			this.getEvent(),
 			(data) => {
-				if (isRequest(data)) {
+				if (io_raw.isRequest(data)) {
 					/*
 						Получен запрос.
 					*/
@@ -160,7 +150,7 @@ export class Connection {
 							respond
 						);
 					}
-				} else if (isResponse(data)) {
+				} else if (io_raw.isResponse(data)) {
 					/*
 						Получен ответ на запрос.
 					*/
@@ -210,7 +200,7 @@ export class Connection {
 		configuration: {
 			to: string,
 			data: any,
-			callback?: ResponseHandler
+			callback?: io_raw.ResponseHandler
 		}
 	) {
 		let recipient = this.store.getClientById(
@@ -234,7 +224,7 @@ export class Connection {
 			});
 		}
 
-		let request: Request = {
+		let request: io_raw.Request = {
 			type: "request",
 			requestId: requestId,
 			data: configuration.data
@@ -274,7 +264,7 @@ export class Connection {
 		}
 
 		let event = this.getEvent();
-		let response: Response = {
+		let response: io_raw.Response = {
 			type: "response",
 			requestId: configuration.requestId,
 			data: configuration.data
