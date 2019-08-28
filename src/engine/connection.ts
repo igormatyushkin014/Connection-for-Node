@@ -3,8 +3,8 @@ import {
 } from "./configuration";
 
 import {
-	User
-} from "../data/user";
+	Client
+} from "../data/client";
 
 import {
 	Store
@@ -76,8 +76,8 @@ export class Connection {
 							Если указан обработчик отключения пользователя,
 							вызываем данный обработчик.
 						*/
-						if (this.configuration.users && this.configuration.users.onDisconnected) {
-							this.configuration.users.onDisconnected(
+						if (this.configuration.clients && this.configuration.clients.onDisconnected) {
+							this.configuration.clients.onDisconnected(
 								user
 							);
 						}
@@ -88,8 +88,8 @@ export class Connection {
 					Если указан обработчик подключения нового пользователя,
 					вызываем данный обработчик.
 				*/
-				if (this.configuration.users && this.configuration.users.onConnected) {
-					this.configuration.users.onConnected(
+				if (this.configuration.clients && this.configuration.clients.onConnected) {
+					this.configuration.clients.onConnected(
 						user
 					);
 				}
@@ -107,11 +107,11 @@ export class Connection {
 
 	private add(
 		socket: SocketIO.Socket
-	): User {
+	): Client {
 		/*
-			Создаем нового пользователя и добавляем его в базу.
+			Создаем нового клиента и добавляем его в базу.
 		*/
-		let user = this.store.createUser(
+		let client = this.store.createClient(
 			socket
 		);
 		
@@ -145,12 +145,12 @@ export class Connection {
 					if (this.configuration.io && this.configuration.io.onRequest) {
 						let request = {
 							requestId: requestId,
-							from: user,
+							from: client,
 							data: data.data
 						};
 						let respond = (data: any) => {
 							this.response({
-								to: user.id,
+								to: client.id,
 								requestId: requestId,
 								data: data
 							});
@@ -185,25 +185,25 @@ export class Connection {
 			}
 		);
 
-		return user;
+		return client;
 	}
 
 	private remove(
 		socket: SocketIO.Socket
 	) {
-		let user = this.store.getUserBySocketId(
+		let user = this.store.getClientBySocketId(
 			socket.id
 		);
 		
 		if (user) {
-			this.store.removeUserById(
+			this.store.removeClientById(
 				user.id
 			);
 		}
 	}
 
-	public getUsers(): User[] {
-		return this.store.getAllUsers();
+	public getClients(): Client[] {
+		return this.store.getAllClients();
 	}
 
 	public request(
@@ -213,7 +213,7 @@ export class Connection {
 			callback?: ResponseHandler
 		}
 	) {
-		let recipient = this.store.getUserById(
+		let recipient = this.store.getClientById(
 			configuration.to
 		);
 
@@ -249,12 +249,13 @@ export class Connection {
 	public everyone(
 		data: any
 	) {
-		this.getUsers().forEach((user) => {
-			this.request({
-				to: user.id,
-				data: data
+		this.store.getAllClients()
+			.forEach((client) => {
+				this.request({
+					to: client.id,
+					data: data
+				});
 			});
-		});
 	}
 
 	private response(
@@ -264,7 +265,7 @@ export class Connection {
 			data: any
 		}
 	) {
-		let recipient = this.store.getUserById(
+		let recipient = this.store.getClientById(
 			configuration.to
 		);
 

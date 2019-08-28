@@ -16,7 +16,7 @@
 
 ## At a Glance
 
-`Connection` is a new way of socket communication. It automatically converts sockets into user profiles and helps developer to associate personal data with each connected user. Also, `Connection` simplifies socket networking by asynchronous callbacks. The library is built on top of [socket.io](https://socket.io).
+`Connection` is a new way of socket communication. It automatically converts sockets into client profiles and helps developer to associate personal data with each connected client. Also, `Connection` simplifies socket networking by asynchronous callbacks. The library is built on top of [socket.io](https://socket.io).
 
 **Important note.** This is a server-side of `Connection` library. For client-side solution, take a look at [JavaScript version](https://github.com/igormatyushkin014/Connection.js).
 
@@ -46,37 +46,37 @@ const connection = new Connection({
 });
 ```
 
-### Users
+### Clients
 
-Instead of low-level sockets, `Connection` considers every client as a `User`. Every user has:
+Instead of low-level sockets, `Connection` considers every client as instance of `Client` type. Every instance has:
 
-- `id`: unique string that identifies user;
+- `id`: unique string that identifies client;
 - `socket`: reference to socket object from `socket.io` library;
-- `data`: optional object for storing user's data **(do whatever you want with this object)**.
+- `data`: optional object for storing client's data **(do whatever you want with this object)**.
 
-The list of existing users is accesible via:
+The list of existing clients is accesible via:
 
 ```typescript
-connection.getUsers()
+connection.getClients()
 ```
 
-You can handle user-related events within the configuration of your `Connection` instance:
+You can handle client-related events within the configuration of your `Connection` instance:
 
 ```typescript
 const connection = new Connection({
 	server: <HTTP or HTTPS server instance>,
-	users: {
-		onConnected: (user) => {
+	clients: {
+		onConnected: (client) => {
 			/*
-				Handle new user.
+				Handle new client.
 			*/
-			console.log(`Added user with ID: ${user.id}`);
+			console.log(`Added client with ID: ${user.id}`);
 		},
-		onDisconnected: (user) => {
+		onDisconnected: (client) => {
 			/*
-				Handle user's disconnection.
+				Handle client's disconnection.
 			*/
-			console.log(`Removed user with ID: ${user.id}`);
+			console.log(`Removed client with ID: ${user.id}`);
 		}
 	}
 });
@@ -114,7 +114,7 @@ const connection = new Connection({
 					We can send response to client by passing data to `respond` function.
 				*/
 				respond({
-					text: `Hello, user "${sender.id}"!`
+					text: `Hello, client "${sender.id}"!`
 				});
 			}
 		}
@@ -122,7 +122,7 @@ const connection = new Connection({
 });
 ```
 
-Sending request from server to user is super simple:
+Sending request from server to client is super simple:
 
 ```typescript
 connection.send({
@@ -133,12 +133,12 @@ connection.send({
 });
 ```
 
-Let's assume we want to say hello to the first user on the list:
+Let's assume we want to say hello to the first client on the list:
 
 ```typescript
-let user = connection.getUsers()[0];
+let client = connection.getClients()[0];
 connection.send({
-	to: user.id,
+	to: client.id,
 	data: {
 		text: "Hello!"
 	}
@@ -148,9 +148,9 @@ connection.send({
 If you want to get response, add `callback` to the options:
 
 ```typescript
-let user = connection.getUsers()[0];
+let user = connection.getClients()[0];
 connection.send({
-	to: user.id,
+	to: client.id,
 	data: {
 		text: "Hello!"
 	},
@@ -162,7 +162,7 @@ connection.send({
 });
 ```
 
-Also, we can say hello to all users:
+Also, we can say hello to all connected clients:
 
 ```typescript
 connection.everyone({
@@ -180,18 +180,18 @@ const connection = new Connection({
 	events: {
 		defaultEvent: "CustomEvent"
 	},
-	users: {
-		onConnected: (user) => {
+	clients: {
+		onConnected: (client) => {
 			/*
-				Handle new user.
+				Handle new client.
 			*/
-			console.log(`Added user with ID: ${user.id}`);
+			console.log(`Added client with ID: ${user.id}`);
 		},
-		onDisconnected: (user) => {
+		onDisconnected: (client) => {
 			/*
-				Handle user's disconnection.
+				Handle client's disconnection.
 			*/
-			console.log(`Removed user with ID: ${user.id}`);
+			console.log(`Removed client with ID: ${user.id}`);
 		}
 	},
 	io: {
@@ -207,7 +207,7 @@ const connection = new Connection({
 					data to `respond` function.
 				*/
 				respond({
-					text: `Hello, user "${sender.id}"!`
+					text: `Hello, client "${sender.id}"!`
 				});
 			}
 		}

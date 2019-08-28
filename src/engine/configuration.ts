@@ -1,6 +1,6 @@
 import {
-	User
-} from "../data/user";
+	Client
+} from "../data/client";
 
 import {
 	Request
@@ -15,15 +15,15 @@ export type Configuration = {
 	readonly events?: {
 		readonly defaultEvent?: string
 	},
-	readonly users?: {
-		readonly onConnected?: (user: User) => void,
-		readonly onDisconnected?: (user: User) => void
+	readonly clients?: {
+		readonly onConnected?: (client: Client) => void,
+		readonly onDisconnected?: (client: Client) => void
 	},
 	readonly io?: {
 		readonly onRequest?: (
 			request: {
 				requestId: string,
-				from: User
+				from: Client
 				data: any
 			},
 			respond: (data: any) => void

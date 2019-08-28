@@ -3,73 +3,73 @@ import {
 } from "./id-provider";
 
 import {
-	User
-} from "../data/user";
+	Client
+} from "../data/client";
 
 export class Store {
 
-	private users = new Array<User>();
+	private clients = new Array<Client>();
 
 	private idProvider = new IdProvider();
 
 	constructor() {
 	}
 
-	public getAllUsers(): User[] {
-		return this.users.slice();
+	public getAllClients(): Client[] {
+		return this.clients.slice();
 	}
 
-	public getUserById(id: string): User | undefined {
-		return this.users
-			.find((user) => {
-				return user.id === id;
+	public getClientById(id: string): Client | undefined {
+		return this.clients
+			.find((client) => {
+				return client.id === id;
 			});
 	}
 
-	public getUserBySocketId(id: string): User | undefined {
-		return this.users
-			.find((user) => {
-				return user.socket.id === id;
+	public getClientBySocketId(id: string): Client | undefined {
+		return this.clients
+			.find((client) => {
+				return client.socket.id === id;
 			});
 	}
 
-	public createUser(
+	public createClient(
 		socket: SocketIO.Socket
-	): User {
-		let user: User = {
+	): Client {
+		let client: Client = {
 			id: this.idProvider.getNextId(),
 			socket: socket,
 			data: undefined
 		};
-		this.users.push(
-			user
+		this.clients.push(
+			client
 		);
-		return user;
+		return client;
 	}
 
-	public removeUserById(
+	public removeClientById(
 		id: string
 	) {
-		let index = this.users
-			.findIndex((user) => {
-				return user.id === id;
+		let index = this.clients
+			.findIndex((client) => {
+				return client.id === id;
 			});
 
-		if (index >= 0 && index < this.users.length) {
-			this.users.splice(index, 1);
+		if (index >= 0 && index < this.clients.length) {
+			this.clients.splice(index, 1);
 		}
 	}
 
 	public removeUserBySocketId(
 		id: string
 	) {
-		let index = this.users
-			.findIndex((user) => {
-				return user.socket.id === id;
+		let index = this.clients
+			.findIndex((client) => {
+				return client.socket.id === id;
 			});
 
-		if (index >= 0 && index < this.users.length) {
-			this.users.splice(index, 1);
+		if (index >= 0 && index < this.clients.length) {
+			this.clients.splice(index, 1);
 		}
 	}
 }

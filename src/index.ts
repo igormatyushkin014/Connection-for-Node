@@ -1,6 +1,6 @@
 export {
-	User
-} from "./data/user";
+	Client
+} from "./data/client";
 
 export {
 	Configuration
