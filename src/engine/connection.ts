@@ -26,7 +26,7 @@ export class Connection {
 
 	private readonly store: Store;
 
-	private readonly requestIdProvider: IdProvider;
+	private readonly idProvider: IdProvider;
 
 	private readonly responseHandlers: {
 		requestId: string,
@@ -39,7 +39,7 @@ export class Connection {
 		private readonly configuration: Configuration
 	) {
 		this.store = new Store();
-		this.requestIdProvider = new IdProvider();
+		this.idProvider = new IdProvider();
 		this.responseHandlers = [];
 		this.setupSocketIO();
 	}
@@ -48,10 +48,11 @@ export class Connection {
 		this.socketIO = require("socket.io")(
 			this.configuration.server
 		);
+
 		this.socketIO!.on(
 			"connection",
 			(socket: SocketIO.Socket) => {
-				let user = this.add(
+				let client = this.add(
 					socket
 				);
 
@@ -68,7 +69,7 @@ export class Connection {
 						*/
 						if (this.configuration.clients && this.configuration.clients.onDisconnected) {
 							this.configuration.clients.onDisconnected(
-								user
+								client
 							);
 						}
 					}
@@ -80,7 +81,7 @@ export class Connection {
 				*/
 				if (this.configuration.clients && this.configuration.clients.onConnected) {
 					this.configuration.clients.onConnected(
-						user
+						client
 					);
 				}
 			}
@@ -92,6 +93,118 @@ export class Connection {
 			return this.configuration.events.defaultEvent;
 		} else {
 			return Connection.defaultEvent;
+		}
+	}
+
+	private subscribeClientToEvents(
+		client: Client
+	) {
+		client.socket.on(
+			this.getEvent(),
+			(data) => {
+				if (io_raw.isRequest(data)) {
+					this.handleIncomingRawRequest(
+						data,
+						client
+					);
+				} else if (io_raw.isResponse(data)) {
+					this.handleIncomingRawResponse(
+						data,
+						client
+					);
+				} else if (io_rest.isRequest(data)) {
+					this.handleIncomingRestRequest(
+						data,
+						client
+					);
+				} else {
+					/*
+						Неизвестный тип сообщения.
+					*/
+				}
+			}
+		);
+	}
+
+	private handleIncomingRawRequest(
+		request: io_raw.Request,
+		sender: Client
+	) {
+		let recipientId = request.recipientId;
+
+		if (recipientId) {
+			/*
+				Поскольку сервер не является конечным получателем,
+				перенаправляем запрос указанному получателю
+				и завершаем обработку на стороне сервера.
+			*/
+			this.request({
+				to: recipientId,
+				data: request.data,
+				callback: undefined
+			});
+			return;
+		}
+
+		let requestId = request.requestId;
+
+		if (this.configuration.io && this.configuration.io.onRequest) {
+			let handlerRequest = {
+				from: sender,
+				data: request.data
+			};
+			let handlerRespond = (data: any) => {
+				this.response({
+					to: sender.id,
+					requestId: requestId,
+					data: data
+				});
+			};
+			this.configuration.io.onRequest(
+				handlerRequest,
+				handlerRespond
+			);
+		}
+	}
+
+	private handleIncomingRawResponse(
+		response: io_raw.Response,
+		sender: Client
+	) {
+		let responseHandler = this.getResponseHandler(
+			response.requestId
+		);
+
+		if (responseHandler) {
+			responseHandler(
+				response.data
+			);
+			this.unregisterResponseHandler(
+				response.requestId
+			);
+		}
+	}
+
+	private handleIncomingRestRequest(
+		request: io_rest.Request,
+		sender: Client
+	) {
+		let requestId = request.requestId;
+
+		if (this.configuration.rest && this.configuration.rest.onRequest) {
+			let handlerRequest = {
+				from: sender,
+				path: request.path,
+				method: request.method,
+				headers: request.headers,
+				data: request.data
+			};
+			let handlerRespond = (data: any) => {
+			};
+			this.configuration.rest.onRequest(
+				handlerRequest,
+				handlerRespond
+			);
 		}
 	}
 
@@ -108,71 +221,8 @@ export class Connection {
 		/*
 			Добавляем подписку на все необходимые события.
 		*/
-		socket.on(
-			this.getEvent(),
-			(data) => {
-				if (io_raw.isRequest(data)) {
-					/*
-						Получен запрос.
-					*/
-					let recipientId = data.recipientId;
-
-					if (recipientId) {
-						/*
-							Перенаправляем запрос получателю и завершаем обработку
-							на стороне сервера.
-						*/
-						this.request({
-							to: recipientId,
-							data: data.data,
-							callback: undefined
-						});
-						return;
-					}
-
-					let requestId = data.requestId;
-
-					if (this.configuration.io && this.configuration.io.onRequest) {
-						let request = {
-							requestId: requestId,
-							from: client,
-							data: data.data
-						};
-						let respond = (data: any) => {
-							this.response({
-								to: client.id,
-								requestId: requestId,
-								data: data
-							});
-						};
-						this.configuration.io.onRequest(
-							request,
-							respond
-						);
-					}
-				} else if (io_raw.isResponse(data)) {
-					/*
-						Получен ответ на запрос.
-					*/
-					let responseHandlerIndex = this.responseHandlers
-						.findIndex((responseHandler) => {
-							return responseHandler.requestId === data.requestId;
-						});
-
-					if (responseHandlerIndex < 0 || responseHandlerIndex >= this.responseHandlers.length) {
-						return;
-					}
-
-					let responseHandler = this.responseHandlers[responseHandlerIndex];
-					responseHandler.handler(data.data);
-
-					this.responseHandlers.splice(responseHandlerIndex, 1);
-				} else {
-					/*
-						Неизвестный тип сообщения.
-					*/
-				}
-			}
+		this.subscribeClientToEvents(
+			client
 		);
 
 		return client;
@@ -189,6 +239,39 @@ export class Connection {
 			this.store.removeClientById(
 				user.id
 			);
+		}
+	}
+
+	private registerResponseHandler(
+		requestId: string,
+		handler: io_raw.ResponseHandler
+	) {
+		this.responseHandlers.push({
+			requestId: requestId,
+			handler: handler
+		});
+	}
+
+	private getResponseHandler(
+		requestId: string
+	): io_raw.ResponseHandler | undefined {
+		let responseHandler = this.responseHandlers
+			.find((responseHandler) => {
+				return responseHandler.requestId === requestId;
+			});
+		return responseHandler ? responseHandler.handler : undefined;
+	}
+
+	private unregisterResponseHandler(
+		requestId: string
+	) {
+		let handlerIndex = this.responseHandlers
+			.findIndex((responseHandler) => {
+				return responseHandler.requestId === requestId;
+			});
+
+		if (0 <= handlerIndex && handlerIndex < this.responseHandlers.length) {
+			this.responseHandlers.splice(handlerIndex, 1);
 		}
 	}
 
@@ -212,20 +295,20 @@ export class Connection {
 		}
 
 		let event = this.getEvent();
-		let requestId = this.requestIdProvider.getNextId();
+		let requestId = this.idProvider.getNextId();
 
 		if (configuration.callback) {
 			/*
 				Добавляем обработчик ответа в очередь.
 			*/
-			this.responseHandlers.push({
-				requestId: requestId,
-				handler: configuration.callback
-			});
+			this.registerResponseHandler(
+				requestId,
+				configuration.callback
+			);
 		}
 
 		let request: io_raw.Request = {
-			type: "request",
+			type: "raw.request",
 			requestId: requestId,
 			data: configuration.data
 		};
@@ -265,7 +348,7 @@ export class Connection {
 
 		let event = this.getEvent();
 		let response: io_raw.Response = {
-			type: "response",
+			type: "raw.response",
 			requestId: configuration.requestId,
 			data: configuration.data
 		};

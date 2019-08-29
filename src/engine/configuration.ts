@@ -2,6 +2,8 @@ import {
 	Client
 } from "../data/client";
 
+import * as io_rest from "../io/rest";
+
 import http from "http";
 
 import https from "https";
@@ -18,11 +20,22 @@ export type Configuration = {
 	readonly io?: {
 		readonly onRequest?: (
 			request: {
-				requestId: string,
 				from: Client
 				data: any
 			},
 			respond: (data: any) => void
+		) => void
+	},
+	readonly rest?: {
+		readonly onRequest?: (
+			request: {
+				from: Client,
+				path: string,
+				method: string,
+				headers?: {[id: string]: string}[],
+				data?: {[id: string]: any},
+			},
+			respond: (response: io_rest.Response) => void
 		) => void
 	}
 };
