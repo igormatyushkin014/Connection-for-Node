@@ -11,3 +11,7 @@ export {
 export {
 	ResponseHandler
 } from "./response-handler";
+
+export {
+	Header
+} from "./header";

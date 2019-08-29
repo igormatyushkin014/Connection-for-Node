@@ -2,19 +2,22 @@ import {
 	Response
 } from "./response";
 
+import {
+	Header
+} from "./header";
+
 export type Request = {
 	readonly type: "rest.request",
+	readonly requestId: string,
 	readonly path: string,
 	readonly method: string,
-	readonly headers?: {[id: string]: string}[],
-	readonly data?: {[id: string]: any}[],
-	readonly callback?: (response: Response) => void,
-	readonly onSuccess?: (data: any, status: number) => void,
-	readonly onError?: (data: any, status: number) => void
+	readonly headers: Header[],
+	readonly data?: {[id: string]: any}
 };
 
 export const isRequest = (object: any): object is Request => {
 	return object.type === "rest.request"
 		&& "path" in object
-		&& "method" in object;
+		&& "method" in object
+		&& "headers" in object;
 };
