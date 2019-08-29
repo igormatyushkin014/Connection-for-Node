@@ -33,6 +33,13 @@ export class Store {
 			});
 	}
 
+	public clientExistsWithId(id: string): Boolean {
+		return this.clients
+			.find((client) => {
+				return client.id === id;
+			}) != null;
+	}
+
 	public createClient(
 		socket: SocketIO.Socket
 	): Client {
