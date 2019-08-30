@@ -276,7 +276,7 @@ export class Connection {
 		return this.store.getAllClients();
 	}
 
-	public request(
+	private sendRequest(
 		configuration: {
 			to: string,
 			event?: string,
@@ -317,19 +317,7 @@ export class Connection {
 		);
 	}
 
-	public everyone(
-		data: any
-	) {
-		this.store.getAllClients()
-			.forEach((client) => {
-				this.request({
-					to: client.id,
-					data: data
-				});
-			});
-	}
-
-	private response(
+	private sendResponse(
 		configuration: {
 			to: string,
 			requestId: string,
@@ -354,5 +342,34 @@ export class Connection {
 			this.getEvent(),
 			response
 		);
+	}
+
+	private send(
+		configuration: {
+			to: string,
+			event?: string,
+			data: any,
+			callback?: io_raw.ResponseHandler
+		}
+	) {
+		this.sendRequest(
+			configuration
+		);
+	}
+
+	public everyone(
+		configuration: {
+			event?: string,
+			data: any
+		}
+	) {
+		this.store.getAllClients()
+			.forEach((client) => {
+				this.sendRequest({
+					to: client.id,
+					event: configuration.event,
+					data: configuration.data
+				});
+			});
 	}
 }
