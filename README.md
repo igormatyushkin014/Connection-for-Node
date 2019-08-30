@@ -86,17 +86,6 @@ const connection = new Connection({
 
 In `socket.io`, every message sent between client and server includes event name and (optionally) some data. In `Connection` library, we use a different way of communication: request and response. It's similar to regular APIs where we send data by HTTP channel and (sometimes) receive response.
 
-Because `Connection` uses `socket.io` under the hood, it actually sends socket messages between client and server. By default, we use `connection.event` string for event name. If by some reason you want to change default event name, you still can do this via configuration object:
-
-```typescript
-const connection = new Connection({
-	server: <HTTP or HTTPS server instance>,
-	events: {
-		defaultEvent: "DEFAULT-EVENT-NAME"
-	}
-});
-```
-
 To receive requests from client, set up your configuration:
 
 ```typescript
@@ -127,6 +116,7 @@ Sending request from server to client is super simple:
 ```typescript
 connection.send({
 	to: "RECIPIENT-ID",
+	event: "greeting",
 	data: {
 		text: "Hello!"
 	}
@@ -139,6 +129,7 @@ Let's assume we want to say hello to the first client on the list:
 let client = connection.getClients()[0];
 connection.send({
 	to: client.id,
+	event: "greeting",
 	data: {
 		text: "Hello!"
 	}
@@ -151,6 +142,7 @@ If you want to get response, add `callback` to the options:
 let user = connection.getClients()[0];
 connection.send({
 	to: client.id,
+	event: "greeting",
 	data: {
 		text: "Hello!"
 	},
@@ -166,7 +158,10 @@ Also, we can say hello to all connected clients:
 
 ```typescript
 connection.everyone({
-	text: "Hello"
+	event: "greeting",
+	data: {
+		text: "Hello"
+	}
 });
 ```
 
