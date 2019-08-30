@@ -20,7 +20,8 @@ export type Configuration = {
 	readonly io?: {
 		readonly onRequest?: (
 			request: {
-				from: Client
+				from: Client,
+				event?: string,
 				data: any
 			},
 			respond: (data: any) => void

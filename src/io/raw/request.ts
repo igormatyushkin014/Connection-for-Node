@@ -2,6 +2,7 @@ export type Request = {
 	readonly type: "raw.request",
 	readonly requestId: string,
 	readonly recipientId?: string,
+	readonly event?: string,
 	readonly data: any
 };
 

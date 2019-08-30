@@ -22,7 +22,7 @@ import * as SocketIO from "socket.io";
 
 export class Connection {
 
-	private static defaultEvent = "connection.event";
+	private static event = "connection.event";
 
 	private readonly store: Store;
 
@@ -89,11 +89,7 @@ export class Connection {
 	}
 
 	private getEvent() {
-		if (this.configuration.events && this.configuration.events.defaultEvent) {
-			return this.configuration.events.defaultEvent;
-		} else {
-			return Connection.defaultEvent;
-		}
+		return Connection.event;
 	}
 
 	private subscribeClientToEvents(
@@ -151,6 +147,7 @@ export class Connection {
 		if (this.configuration.io && this.configuration.io.onRequest) {
 			let handlerRequest = {
 				from: sender,
+				event: request.event,
 				data: request.data
 			};
 			let handlerRespond = (data: any) => {
@@ -282,6 +279,7 @@ export class Connection {
 	public request(
 		configuration: {
 			to: string,
+			event?: string,
 			data: any,
 			callback?: io_raw.ResponseHandler
 		}
@@ -294,7 +292,6 @@ export class Connection {
 			return;
 		}
 
-		let event = this.getEvent();
 		let requestId = this.idProvider.getNextId();
 
 		if (configuration.callback) {
@@ -310,11 +307,12 @@ export class Connection {
 		let request: io_raw.Request = {
 			type: "raw.request",
 			requestId: requestId,
+			event: configuration.event,
 			data: configuration.data
 		};
 
 		recipient.socket.emit(
-			event,
+			this.getEvent(),
 			request
 		);
 	}
@@ -346,7 +344,6 @@ export class Connection {
 			return;
 		}
 
-		let event = this.getEvent();
 		let response: io_raw.Response = {
 			type: "raw.response",
 			requestId: configuration.requestId,
@@ -354,7 +351,7 @@ export class Connection {
 		};
 
 		recipient.socket.emit(
-			event,
+			this.getEvent(),
 			response
 		);
 	}
