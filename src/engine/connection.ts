@@ -134,7 +134,7 @@ export class Connection {
 				перенаправляем запрос указанному получателю
 				и завершаем обработку на стороне сервера.
 			*/
-			this.request({
+			this.sendRequest({
 				to: recipientId,
 				data: request.data,
 				callback: undefined
@@ -151,7 +151,7 @@ export class Connection {
 				data: request.data
 			};
 			let handlerRespond = (data: any) => {
-				this.response({
+				this.sendResponse({
 					to: sender.id,
 					requestId: requestId,
 					data: data
