@@ -1,6 +1,6 @@
 {
   "name": "@imatyushkin/connection",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "Identifies users connected to your server by Socket.IO. Made for Node.js.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
