@@ -344,7 +344,7 @@ export class Connection {
 		);
 	}
 
-	private send(
+	public send(
 		configuration: {
 			to: string,
 			event?: string,
