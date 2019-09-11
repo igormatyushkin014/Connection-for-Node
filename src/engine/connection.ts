@@ -136,6 +136,7 @@ export class Connection {
 			*/
 			this.sendRequest({
 				to: recipientId,
+				event: request.event,
 				data: request.data,
 				callback: undefined
 			});
